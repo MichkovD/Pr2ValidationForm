@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Регистрация</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Press Start 2P', 'Courier New', monospace;
+      color: #00ffff;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      background-attachment: fixed;
+    }
+
+    .card {
+      padding: 30px 35px;
+      width: 420px;
+      background: rgba(15, 12, 41, 0.85);
+      border: 2px solid #00ffff;
+      box-shadow: 0 0 15px #00ffff, inset 0 0 15px rgba(0, 255, 255, 0.2);
+      backdrop-filter: blur(5px);
+    }
+
+    h2 {
+      text-align: center;
+      color: #ff00ff;
+      margin: 0 0 22px;
+      font-size: 18px;
+      text-shadow: 0 0 10px #ff00ff;
+    }
+
+    label {
+      display: block;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      color: #00ffff;
+      font-size: 10px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #302b63;
+      background: #000;
+      color: #fff;
+      font-size: 10px;
+      font-family: 'Press Start 2P', monospace;
+      box-sizing: border-box;
+      transition: all 0.25s ease;
+    }
+
+    input::placeholder { color: #555; }
+
+    input:focus {
+      outline: none;
+      border-color: #ff00ff;
+      box-shadow: 0 0 10px #ff00ff;
+    }
+
+    /* Классы для JS-валидации */
+    input.valid {
+      border-color: #00ff00;
+      box-shadow: 0 0 8px #00ff00;
+    }
+
+    input.invalid {
+      border-color: #ff0000;
+      box-shadow: 0 0 8px #ff0000;
+    }
+
+    .hint {
+      font-size: 8px;
+      color: #888;
+      margin-top: 5px;
+      display: block;
+      line-height: 1.4;
+    }
+
+    .hint.error { color: #ff0000; }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 22px;
+      border: none;
+      background: #ff00ff;
+      color: #000;
+      font-size: 12px;
+      font-family: 'Press Start 2P', monospace;
+      cursor: pointer;
+      box-shadow: 0 0 10px #ff00ff;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background: #00ffff;
+      box-shadow: 0 0 20px #00ffff;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Регистрация</h2>
+
+  <form id="regForm" action="/register" method="POST" novalidate>
+    <label for="fullname">ФИО</label>
+    <input type="text" id="fullname" name="fullname" placeholder="Иванов Иван Иванович">
+    <span class="hint" id="fullnameHint">Только буквы, минимум 2 слова</span>
+
+    <label for="login">Логин</label>
+    <input type="text" id="login" name="login" placeholder="Любой логин">
+    <span class="hint" id="loginHint">Любые символы, от 3 символов</span>
+
+    <label for="email">Email</label>
+    <input type="text" id="email" name="email" placeholder="user@example.com">
+    <span class="hint" id="emailHint">Только латиница: name@mail.com</span>
+
+    <label for="age">Возраст</label>
+    <input type="text" id="age" name="age" placeholder="25">
+    <span class="hint" id="ageHint">От 18 до 99 лет</span>
+
+    <label for="password">Пароль</label>
+    <input type="text" id="password" name="password" placeholder="MyPass#2024">
+    <span class="hint" id="passwordHint">Мин. 6 символов, латиница, цифры, символы</span>
+
+    <button type="submit">Зарегистрироваться</button>
+  </form>
+</div>
+
+<script>
+  const form = document.getElementById('regForm');
+  const fields = {
+    fullname: document.getElementById('fullname'),
+    login: document.getElementById('login'),
+    email: document.getElementById('email'),
+    age: document.getElementById('age'),
+    password: document.getElementById('password')
+  };
+  const hints = {
+    fullname: document.getElementById('fullnameHint'),
+    login: document.getElementById('loginHint'),
+    email: document.getElementById('emailHint'),
+    age: document.getElementById('ageHint'),
+    password: document.getElementById('passwordHint')
+  };
+
+  const regex = {
+    fullname: /^[A-Za-zА-Яа-яЁё]+(\s+[A-Za-zА-Яа-яЁё]+)+$/,
+    login: /^.{3,20}$/,
+    email: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/,
+    age: /^(1[89]|[2-9]\d)$/,
+    password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d.*\d)(?=.*[^A-Za-z0-9]).{6,}$/
+  };
+
+  function hasRepeatingChars(str) {
+    return /(.)\1{2,}/i.test(str);
+  }
+
+
+  function validateField(name) {
+    const input = fields[name];
+    const hint = hints[name];
+    const value = input.value.trim();
+    let isValid = true;
+    let message = '';
+
+    input.classList.remove('valid', 'invalid');
+    hint.classList.remove('error');
+
+    if (value === '') {
+      isValid = false;
+    } else {
+      switch (name) {
+        case 'fullname':
+          if (!regex.fullname.test(value)) {
+            message = 'Нужно минимум 2 слова (только буквы)';
+            isValid = false;
+          } else if (hasRepeatingChars(value)) {
+            message = 'Слишком много повторяющихся букв (например, КакКК)';
+            isValid = false;
+          }
+          break;
+        case 'login':
+          if (!regex.login.test(value)) {
+            message = 'Логин от 3 до 20 символов';
+            isValid = false;
+          }
+          break;
+        case 'email':
+          if (!regex.email.test(value)) {
+            message = 'Неверный формат почты (user@mail.com)';
+            isValid = false;
+          }
+          break;
+        case 'age':
+          if (!regex.age.test(value)) {
+            message = 'Возраст от 18 до 99 лет';
+            isValid = false;
+          }
+          break;
+        case 'password':
+          if (!regex.password.test(value)) {
+            message = 'Мин. 6 символов, строчные/заглавные, 2 цифры, спецсимвол';
+            isValid = false;
+          }
+          break;
+      }
+    }
+
+    if (isValid) {
+      input.classList.add('valid');
+      hint.textContent = 'Всё верно';
+      hint.style.color = '#00ff00';
+    } else {
+      if (value !== '') input.classList.add('invalid');
+      hint.textContent = message || 'Обязательное поле';
+      hint.classList.add('error');
+    }
+
+    return isValid;
+  }
+
+  let timeout;
+  Object.keys(fields).forEach(name => {
+    fields[name].addEventListener('input', () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => validateField(name), 400);
+    });
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault(); // Останавливаем отправку для проверки
+
+    let isFormValid = true;
+    Object.keys(fields).forEach(name => {
+      if (!validateField(name)) {
+        isFormValid = false;
+      }
+    });
+
+    if (isFormValid) {
+      alert('✅ Форма успешно отправлена! (Здесь будет отправка на сервер (или не будет))))))');
+    } else {
+      alert('❌ Пожалуйста, исправьте ошибки в форме.');
+    }
+  });
+</script>
+
+</body>
+</html>
